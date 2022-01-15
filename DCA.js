@@ -130,15 +130,16 @@ const sendEmail= (subject, text) => {
 const runTimer = async () => {
   const lastInterval = await checkLastInterval()
   const timer = interval - lastInterval[1]
-  console.log(timer)
   new Date().getDay() != lastInterval[0].getDay() ? mailSynthesis() : ""
   if (timer > 0){
     setTimeout(runTimer, timer)
+    console.log("Next oredr in "+ timestampToHms((timer /1000)))
   } 
   else{
     console.log("DCA started")
     await DCA()
     setTimeout(runTimer, 10000)
+    console.log("Start within 10s")
   } 
 
 }
@@ -194,6 +195,19 @@ const mailSynthesis = async () => {
     Yestarday => ${(data[7]*100000000).toLocaleString(locale,formatSat)} SAT for ${data[6].toLocaleString(locale,formatFiat)} @ ${data[8].toLocaleString(locale,formatPriceAED)} (${(data[8]/3.673).toLocaleString(locale,formatPriceUSD)})
     `)
 }
+
+function timestampToHms(d) {
+  d = Number(d);
+  var h = Math.floor(d / 3600);
+  var m = Math.floor(d % 3600 / 60);
+  var s = Math.floor(d % 3600 % 60);
+
+  var hDisplay = h > 0 ? h + (h == 1 ? " hour, " : " hours, ") : "";
+  var mDisplay = m > 0 ? m + (m == 1 ? " minute, " : " minutes, ") : "";
+  var sDisplay = s > 0 ? s + (s == 1 ? " second" : " seconds") : "";
+  return [hDisplay + mDisplay + sDisplay]; 
+}
+
 
 runTimer()
 
