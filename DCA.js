@@ -1,14 +1,12 @@
 import fetch from "node-fetch"
 import nodemailer from "nodemailer"
 
-const apiKey = process.env.API
-const investPerMonth = process.env.INVEST
-const freqencyInHour = process.env.FREQH
+const apiKey =  process.env.API
+const investPerMonth =  process.env.INVEST
+const freqencyInHour =  process.env.FREQH
 const frequency = 24 / freqencyInHour * 30
 const amountInAED = investPerMonth/frequency
 const interval = freqencyInHour * 3600000
-
-
 let mailTransporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -112,6 +110,7 @@ const checkLastInterval = () => {
 }
 
 const sendEmail= (subject, text) => {
+
   let mailDetails = {
     from: 'benjaminbois@gmail.com',
     to: 'benjaminbois@gmail.com',
@@ -144,13 +143,19 @@ const runTimer = async () => {
 
 }
 
-const DCA = async () => {
+const DCA = async (timeout) => {
   const balances = await checkBalance()
   console.log(balances)
   const aedBalance = balances.balances.AED
   aedBalance < investPerMonth *0.1 ? sendEmail("DCA - low AED Balance", `balance is ${aedBalance}`) : ""
   const price = await checkPrice()
   const btcToBuy = (amountInAED / price).toFixed(8).toString()
+  if (btcToBuy < 0.000072) {
+    sendEmail("DCA - BTC order below 0.000072", `Please reduce frequency or increase monthly investment`)
+    console.log("DCA - BTC order below 0.000072, please reduce frequency or increase monthly investment")
+    process.exit(1)
+    return
+  }
   aedBalance > amountInAED ? passOrder(btcToBuy) : sendEmail("DCA - Not enough AED balance", `balance is ${aedBalance}`)
 }
 
@@ -176,11 +181,17 @@ const mailSynthesis = async () => {
     )
   })
   const balances = await checkBalance()
+  const locale = 'en-GB'
+  const formatFiat = { style: 'currency', currency: 'AED' }
+  const formatSat = { }
+  const formatPriceAED = {style: 'currency', currency: 'AED' }
+  const formatPriceUSD = {style: 'currency', currency: 'USD' }
+
   sendEmail("DCA - Daily update", 
-    `balances are ${balances.balances.AED} AED & ${balances.balances.BTC} BTC, 
-    This Year => ${data[1].toFixed(8)*100000000} SAT for ${data[0].toFixed(2)} AED @${data[2].toFixed(2)} AED ($${(data[2]/3.673).toFixed(0)}), 
-    This Month => ${data[4].toFixed(8)*100000000} SAT for ${data[3].toFixed(2)} AED @${data[5].toFixed(2)} AED ($${(data[5]/3.673).toFixed(0)}), 
-    Yestarday => ${data[7].toFixed(8)*100000000} SAT for ${data[6].toFixed(2)} AED @${data[8].toFixed(2)} AED ($${(data[8]/3.673).toFixed(0)}), 
+    `Current Balances : ${parseFloat(balances.balances.AED).toLocaleString(locale,formatFiat)} & ${balances.balances.BTC} BTC, 
+    This Year => ${(data[1]*100000000).toLocaleString(locale,formatSat)} SAT for ${data[0].toLocaleString(locale,formatFiat)} @ ${data[2].toLocaleString(locale,formatPriceAED)} (${(data[2]/3.673).toLocaleString(locale,formatPriceUSD)})
+    This Month => ${(data[4]*100000000).toLocaleString(locale,formatSat)} SAT for ${data[3].toLocaleString(locale,formatFiat)} @ ${data[5].toLocaleString(locale,formatPriceAED)} (${(data[5]/3.673).toLocaleString(locale,formatPriceUSD)})
+    Yestarday => ${(data[7]*100000000).toLocaleString(locale,formatSat)} SAT for ${data[6].toLocaleString(locale,formatFiat)} @ ${data[8].toLocaleString(locale,formatPriceAED)} (${(data[8]/3.673).toLocaleString(locale,formatPriceUSD)})
     `)
 }
 
