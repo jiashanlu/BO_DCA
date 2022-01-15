@@ -1,0 +1,15 @@
+{
+  "name": "docker_dca",
+  "version": "1.0.0",
+  "description": "BTC DCA with BitOasis",
+  "author": "benjamin@bitoasis.net",
+  "main": "DCA.js",
+  "scripts": {
+    "start": "node DCA.js"
+  },
+  "type": "module",
+  "dependencies": {
+    "node-fetch": "^3.1.0",
+    "nodemailer": "^6.7.2"
+  }
+}
