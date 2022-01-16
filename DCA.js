@@ -120,7 +120,7 @@ const sendEmail= (subject, text) => {
 
   mailTransporter.sendMail(mailDetails, function(err, data) {
     if(err) {
-        console.log('Error Occurs');
+        console.log('Email config '+err);
     } else {
         console.log('Email sent successfully');
     }
@@ -133,7 +133,7 @@ const runTimer = async () => {
   new Date().getDay() != lastInterval[0].getDay() ? mailSynthesis() : ""
   if (timer > 0){
     setTimeout(runTimer, timer)
-    console.log("Next oredr in "+ timestampToHms((timer /1000)))
+    console.log("Next order in "+ timestampToHms((timer /1000)))
   } 
   else{
     console.log("DCA started")
