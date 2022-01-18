@@ -138,8 +138,7 @@ const runTimer = async () => {
   else{
     console.log("DCA started")
     await DCA()
-    setTimeout(runTimer, 10000)
-    console.log("Start within 10s")
+    setTimeout(runTimer, 50000)
   } 
 
 }
@@ -166,7 +165,7 @@ const mailSynthesis = async () => {
   const orders = await lastOrder("?limit=1000").then(x => {return x.orders})
   const ordersCurrentYear = orders.filter(x => new Date(x.date_created).getFullYear() == date.getFullYear())
   const ordersCurrentMonth = ordersCurrentYear.filter(x => new Date(x.date_created).getMonth() == date.getMonth())
-  const ordersPreviousDay = orders.filter(x => new Date(x.date_created).getMonth() == dateY.getMonth() && new Date(x.date_created).getFullYear() == dateY.getFullYear() && new Date(x.date_created).getDay() == dateY.getDay() )
+  const ordersPreviousDay = orders.filter(x => new Date(x.date_created).getMonth() == dateY.getMonth() && new Date(x.date_created).getFullYear() == dateY.getFullYear() && new Date(x.date_created).getDate() == dateY.getDate() )
   const analysis = [ordersCurrentYear,ordersCurrentMonth,ordersPreviousDay]
   const data = []
   analysis.forEach(array => { 
