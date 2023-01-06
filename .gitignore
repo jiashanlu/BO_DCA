@@ -1,3 +1,5 @@
 /img
 /node_modules
 DCAcopy.js
+.env
+.gitignore

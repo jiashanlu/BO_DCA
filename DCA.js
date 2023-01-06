@@ -1,5 +1,6 @@
 import fetch from "node-fetch"
 import nodemailer from "nodemailer"
+import createCsvWriter from 'csv-writer';
 
 const apiKey =  process.env.API
 const investPerMonth =  process.env.INVEST
@@ -16,97 +17,121 @@ let mailTransporter = nodemailer.createTransport({
 });
 
 
-const checkBalance = () => {
-  return fetch(`https://api.bitoasis.net/v1/exchange/balances`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    }
-  })
-  .then(res => res.json())
-  .then(json => {return json})
-  .catch(err => {
-      console.log(err)
-  })
+const checkBalance = async () => {
+  try {
+    const res = await fetch(`https://api.bitoasis.net/v1/exchange/balances`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      }
+    })
+    const json = await res.json()
+    return json
+  } catch (err) {
+    console.log(err)
+  }
 }
 
-const checkPrice = () => {
-  return fetch(`https://api.bitoasis.net/v1/exchange/ticker/BTC-AED`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    }
-  })
-  .then(res => res.json())
-  .then(json => {return json.ticker.ask})
-  .catch(err => {
-      console.log(err)
-  })
+const checkPrice = async () => {
+  try {
+    const res = await fetch(`https://api.bitoasis.net/v1/exchange/ticker/BTC-AED`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      }
+    })
+    const json = await res.json()
+    return json.ticker.ask
+  } catch (err) {
+    console.log(err)
+  }
 }
 
-const passOrder = (size) => {
+const passOrder = async (size) => {
 const body =  {
   'side': 'buy',
   'type': 'market',
   'pair': 'BTC-AED',
   'amount': size
 }
-  return fetch(`https://api.bitoasis.net/v1/exchange/order`, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
+  try {
+    const res = await fetch(`https://api.bitoasis.net/v1/exchange/order`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      }
+    })
+    const json = await res.json()
+    return json.code == 404 ? console.log(json) : checkOrder(json.order.id)
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+const checkOrder = async (id) => {
+  try {
+    const res = await fetch(`https://api.bitoasis.net/v1/exchange/order/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      }
+    })
+    const json = await res.json()
+    console.log(json)
+    return json
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+const lastOrder = async (param) => {
+  try {
+    const res = await fetch(`https://api.bitoasis.net/v1/exchange/orders/BTC-AED${param}`, {
+      method: 'GET',
+
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      }
+    })
+    const json = await res.json()
+    return json
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+async function getAllOrders(offset) {
+  try {
+    const limit = 1000;
+    const orders = [];
+    let hasMore = true;
+    while (hasMore) {
+      const res = await lastOrder(`?limit=${limit}&offset=${offset}`);
+      console.log(res.orders.length)
+      orders.push(...res.orders);
+      offset += res.orders.length;
+      res.orders.length<1000 ? hasMore = false : hasMore = true;
     }
-  })
-  .then(res => res.json())
-  .then(json=> json.code == 404 ? console.log(json) :checkOrder(json.order.id))
-  .catch(err => {
-    console.log(err)
-  })
-}
-
-const checkOrder = (id) => {
-  return fetch(`https://api.bitoasis.net/v1/exchange/order/${id}`, {
-  method: 'GET',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${apiKey}`
+    return orders;
+  } catch (error) {
+    console.error(error);
+    throw error;
   }
-})
-.then(res => res.json())
-.then((json) => {console.log(json); return json})
-.catch(err => {
-    console.log(err)
-})
 }
 
-const lastOrder = (param) => {
-  return fetch(`https://api.bitoasis.net/v1/exchange/orders/BTC-AED${param}`, {
-  method: 'GET',
 
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${apiKey}`
-  }
-})
-.then(res => res.json())
-.then((json) => {return json})
-.catch(err => {
-    console.log(err)
-})
-}
-
-const checkLastInterval = () => {
-  return lastOrder("?limit=1")
-  .then(x => {
-    const date = new Date(x.orders[0].date_created);
-    const now = new Date();
-    const gap = now.getTime()-date.getTime();
-    return [date,gap]}
-  )
+const checkLastInterval = async () => {
+  const x = await lastOrder("?limit=1")
+  const date = new Date(x.orders[0].date_created)
+  const now = new Date()
+  const gap = now.getTime() - date.getTime()
+  return [date, gap]
 }
 
 const sendEmail= (subject, text) => {
@@ -116,6 +141,12 @@ const sendEmail= (subject, text) => {
     to: 'benjaminbois@gmail.com',
     subject,
     text,
+    attachments: [
+      {
+        filename: 'orders.csv',
+        path: './orders.csv',
+      },
+    ],
   };
 
   mailTransporter.sendMail(mailDetails, function(err, data) {
@@ -162,11 +193,14 @@ const DCA = async (timeout) => {
 const mailSynthesis = async () => {
   const date = new Date()
   let dateY= new Date(date.setDate(date.getDate()-1))
-  const orders = await lastOrder("?limit=1000").then(x => {return x.orders})
+  let orders = await getAllOrders(0);
+  orders = orders.filter(x => x.status == "DONE")
+  await writeOrdersToCsv(orders);
   const ordersCurrentYear = orders.filter(x => new Date(x.date_created).getFullYear() == date.getFullYear())
+  const ordersPastYear = orders.filter(x => new Date(x.date_created).getFullYear() == date.getFullYear()-1)
   const ordersCurrentMonth = ordersCurrentYear.filter(x => new Date(x.date_created).getMonth() == date.getMonth())
   const ordersPreviousDay = orders.filter(x => new Date(x.date_created).getMonth() == dateY.getMonth() && new Date(x.date_created).getFullYear() == dateY.getFullYear() && new Date(x.date_created).getDate() == dateY.getDate() )
-  const analysis = [ordersCurrentYear,ordersCurrentMonth,ordersPreviousDay]
+  const analysis = [ordersCurrentYear,ordersCurrentMonth,ordersPreviousDay,ordersPastYear,orders]
   const data = []
   analysis.forEach(array => { 
     data.push(
@@ -189,9 +223,11 @@ const mailSynthesis = async () => {
 
   sendEmail("DCA - Daily update", 
     `Current Balances : ${parseFloat(balances.balances.AED).toLocaleString(locale,formatFiat)} & ${balances.balances.BTC} BTC, 
+    Past Year => ${(data[10]*100000000).toLocaleString(locale,formatSat)} SAT for ${data[9].toLocaleString(locale,formatFiat)} @ ${data[11].toLocaleString(locale,formatPriceAED)} (${(data[11]/3.673).toLocaleString(locale,formatPriceUSD)})
     This Year => ${(data[1]*100000000).toLocaleString(locale,formatSat)} SAT for ${data[0].toLocaleString(locale,formatFiat)} @ ${data[2].toLocaleString(locale,formatPriceAED)} (${(data[2]/3.673).toLocaleString(locale,formatPriceUSD)})
     This Month => ${(data[4]*100000000).toLocaleString(locale,formatSat)} SAT for ${data[3].toLocaleString(locale,formatFiat)} @ ${data[5].toLocaleString(locale,formatPriceAED)} (${(data[5]/3.673).toLocaleString(locale,formatPriceUSD)})
-    Yestarday => ${(data[7]*100000000).toLocaleString(locale,formatSat)} SAT for ${data[6].toLocaleString(locale,formatFiat)} @ ${data[8].toLocaleString(locale,formatPriceAED)} (${(data[8]/3.673).toLocaleString(locale,formatPriceUSD)})
+    Yesterday => ${(data[7]*100000000).toLocaleString(locale,formatSat)} SAT for ${data[6].toLocaleString(locale,formatFiat)} @ ${data[8].toLocaleString(locale,formatPriceAED)} (${(data[8]/3.673).toLocaleString(locale,formatPriceUSD)})
+    Since I run it => ${(data[13]*100000000).toLocaleString(locale,formatSat)} SAT for ${data[12].toLocaleString(locale,formatFiat)} @ ${data[14].toLocaleString(locale,formatPriceAED)} (${(data[14]/3.673).toLocaleString(locale,formatPriceUSD)})
     `)
 }
 
@@ -208,7 +244,29 @@ function timestampToHms(d) {
 }
 
 
-runTimer()
 
+
+async function writeOrdersToCsv(orders) {
+  // Create a CSV writer
+  const csvWriter = createCsvWriter.createObjectCsvWriter({
+    path: 'orders.csv',
+    header: [
+      {id: 'id', title: 'ID'},
+      {id: 'side', title: 'Side'},
+      {id: 'amount_BTC', title: 'amount_BTC'},
+      {id: 'amount_AED', title: 'amount_AED'},
+      {id: 'date_created', title: 'date_created'},
+      {id: 'status', title: 'Status'},
+    ],
+  });
+
+  // Write the orders to the CSV file
+  await csvWriter.writeRecords(orders);
+
+}
+
+
+// runTimer()
+mailSynthesis()
 
 
