@@ -266,7 +266,7 @@ async function writeOrdersToCsv(orders) {
 }
 
 
-// runTimer()
-mailSynthesis()
+runTimer()
+// mailSynthesis()
 
 
