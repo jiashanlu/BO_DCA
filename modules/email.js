@@ -19,7 +19,7 @@ const sendEmail = (subject, text) => {
     attachments: [
       {
         filename: "orders.csv",
-        path: "./orders.csv",
+        path: "../orders.csv",
       },
     ],
   };

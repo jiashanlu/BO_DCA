@@ -15,7 +15,7 @@ function timestampToHms(d) {
 async function writeOrdersToCsv(orders) {
   // Create a CSV writer
   const csvWriter = createCsvWriter.createObjectCsvWriter({
-    path: "orders.csv",
+    path: "../orders.csv",
     header: [
       { id: "id", title: "ID" },
       { id: "side", title: "Side" },
