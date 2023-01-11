@@ -8,11 +8,18 @@ import {
 import { timestampToHms } from "./modules/helpers.js";
 
 const checkLastInterval = async () => {
-  const x = await lastOrder("?limit=1");
-  const date = new Date(x.orders[0].date_created);
-  const now = new Date();
-  const gap = now.getTime() - date.getTime();
-  return [date, gap];
+  try {
+    const { orders } = await lastOrder("?limit=1");
+    if (orders.length === 0) throw new Error("No Order found");
+    const [{ date_created }] = orders;
+    const date = new Date(date_created);
+    const now = Date.now();
+    const gap = now - date.getTime();
+    console.log(date, gap);
+    return { date, gap };
+  } catch (error) {
+    return { error: error.message };
+  }
 };
 
 const runTimer = async () => {
@@ -54,4 +61,5 @@ const DCA = async (timeout) => {
     : sendEmail("DCA - Not enough AED balance", `balance is ${aedBalance}`);
 };
 
-runTimer();
+// runTimer();
+checkLastInterval2();
