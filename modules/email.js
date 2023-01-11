@@ -12,8 +12,8 @@ let mailTransporter = nodemailer.createTransport({
 
 const sendEmail = (subject, text) => {
   let mailDetails = {
-    from: "benjaminbois@gmail.com",
-    to: "benjaminbois@gmail.com",
+    from: process.env.MAIL,
+    to: process.env.MAIL,
     subject,
     text,
     attachments: [
@@ -151,3 +151,4 @@ const mailSynthesis = async () => {
       `
   );
 };
+mailSynthesis();
