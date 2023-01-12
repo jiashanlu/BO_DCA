@@ -6,6 +6,7 @@ import {
   lastOrder,
 } from "./modules/api.js";
 import { timestampToHms } from "./modules/helpers.js";
+import { sendEmail, mailSynthesis } from "./modules/email.js";
 
 const checkLastInterval = async () => {
   const x = await lastOrder("?limit=1");

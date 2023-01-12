@@ -151,4 +151,4 @@ const mailSynthesis = async () => {
       `
   );
 };
-mailSynthesis();
+export { mailSynthesis, sendEmail };

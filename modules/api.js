@@ -12,7 +12,6 @@ const checkBalance = async () => {
       },
     });
     const json = await res.json(); // parsing the json response
-    console.log(json, apiKey);
     return json; // returning the json response
   } catch (err) {
     console.log(err); //logging the error
