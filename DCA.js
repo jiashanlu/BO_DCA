@@ -32,7 +32,7 @@ const runTimer = async () => {
 
 const DCA = async (timeout) => {
   const balances = await checkBalance();
-  console.log(balances);
+  console.log(JSON.stringify(balances));
   const aedBalance = balances.balances.AED;
   aedBalance < investPerMonth * 0.1
     ? sendEmail("DCA - low AED Balance", `balance is ${aedBalance}`)

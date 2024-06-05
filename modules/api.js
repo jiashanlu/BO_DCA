@@ -83,7 +83,7 @@ const checkOrder = async (id) => {
     );
     // parse the response as json
     const json = await res.json();
-    console.log(json); // log the json response
+    console.log(JSON.stringify(json)); // log the json response
     return json;
   } catch (err) {
     console.log(err); // log the error if any
